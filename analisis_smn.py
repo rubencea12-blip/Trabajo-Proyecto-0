@@ -38,7 +38,6 @@ def leer_observaciones(ruta):
                 if not linea:
                     continue
 
-                # saca el " /" final si aparece (artefacto del archivo)
                 if linea.endswith("/"):
                     linea = linea[:-1].strip()
 
@@ -107,6 +106,24 @@ def leer_observaciones(ruta):
     return observaciones
 
 
+def cantidad_ciudades(observaciones):
+    """Devuelve la cantidad total de ciudades leídas."""
+    return len(observaciones)
+
+
+def cantidad_ciudades_completas(observaciones):
+    """Devuelve la cantidad de ciudades sin ningún dato faltante."""
+    completas = 0
+    for datos in observaciones.values():
+        if datos["temperatura"] is not None and \
+           datos["sensacion_termica"] is not None and \
+           datos["humedad"] is not None and \
+           datos["velocidad_viento"] is not None and \
+           datos["presion"] is not None:
+            completas += 1
+    return completas
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python analisis_smn.py <ruta_archivo>")
@@ -114,4 +131,5 @@ if __name__ == "__main__":
 
     ruta = sys.argv[1]
     datos = leer_observaciones(ruta)
-    print(f"Se leyeron {len(datos)} ciudades.")
+    print(f"Se leyeron {cantidad_ciudades(datos)} ciudades.")
+    print(f"Ciudades con todos los datos completos: {cantidad_ciudades_completas(datos)}")
