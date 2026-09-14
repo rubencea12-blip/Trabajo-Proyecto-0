@@ -124,6 +124,50 @@ def cantidad_ciudades_completas(observaciones):
     return completas
 
 
+def ciudad_temperatura_maxima(observaciones):
+    """Devuelve la ciudad (o ciudades) con la temperatura más alta."""
+    validas = {c: d for c, d in observaciones.items() if d["temperatura"] is not None}
+    if not validas:
+        return []
+    maxima = max(d["temperatura"] for d in validas.values())
+    return [c for c, d in validas.items() if d["temperatura"] == maxima]
+
+
+def ciudad_temperatura_minima(observaciones):
+    """Devuelve la ciudad (o ciudades) con la temperatura más baja."""
+    validas = {c: d for c, d in observaciones.items() if d["temperatura"] is not None}
+    if not validas:
+        return []
+    minima = min(d["temperatura"] for d in validas.values())
+    return [c for c, d in validas.items() if d["temperatura"] == minima]
+
+
+def ciudad_viento_maximo(observaciones):
+    """Devuelve la ciudad (o ciudades) con la velocidad de viento más alta."""
+    validas = {c: d for c, d in observaciones.items() if d["velocidad_viento"] is not None}
+    if not validas:
+        return []
+    maxima = max(d["velocidad_viento"] for d in validas.values())
+    return [c for c, d in validas.items() if d["velocidad_viento"] == maxima]
+
+
+def ciudad_viento_minimo(observaciones):
+    """Devuelve la ciudad (o ciudades) con la velocidad de viento más baja."""
+    validas = {c: d for c, d in observaciones.items() if d["velocidad_viento"] is not None}
+    if not validas:
+        return []
+    minima = min(d["velocidad_viento"] for d in validas.values())
+    return [c for c, d in validas.items() if d["velocidad_viento"] == minima]
+
+
+def top_n_ciudades(observaciones, campo, n, descendente=True):
+    """Devuelve las n ciudades ordenadas según 'campo', de mayor a menor
+    (o al revés si descendente=False). Reutilizable para temperatura o viento."""
+    validas = [(c, d[campo]) for c, d in observaciones.items() if d[campo] is not None]
+    validas.sort(key=lambda par: par[1], reverse=descendente)
+    return validas[:n]
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python analisis_smn.py <ruta_archivo>")
@@ -133,3 +177,9 @@ if __name__ == "__main__":
     datos = leer_observaciones(ruta)
     print(f"Se leyeron {cantidad_ciudades(datos)} ciudades.")
     print(f"Ciudades con todos los datos completos: {cantidad_ciudades_completas(datos)}")
+    print(f"Ciudad(es) con temperatura máxima: {ciudad_temperatura_maxima(datos)}")
+    print(f"Ciudad(es) con temperatura mínima: {ciudad_temperatura_minima(datos)}")
+    print(f"Ciudad(es) con viento máximo: {ciudad_viento_maximo(datos)}")
+    print(f"Ciudad(es) con viento mínimo: {ciudad_viento_minimo(datos)}")
+    print(f"Top 5 más cálidas: {top_n_ciudades(datos, 'temperatura', 5)}")
+    print(f"Top 5 más frías: {top_n_ciudades(datos, 'temperatura', 5, descendente=False)}")
