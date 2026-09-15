@@ -168,6 +168,46 @@ def top_n_ciudades(observaciones, campo, n, descendente=True):
     return validas[:n]
 
 
+def columnas_ausentes(observaciones):
+    """Devuelve el conjunto de campos esperados que no aparecen en ninguna
+    observación leída."""
+    campos_presentes = set()
+    for datos in observaciones.values():
+        campos_presentes.update(datos.keys())
+
+    esperados = set(CAMPOS_ESPERADOS[1:])
+    equivalencias = {
+        "viento": {"direccion_viento", "velocidad_viento"}
+    }
+
+    faltantes = set()
+    for campo in esperados:
+        if campo in equivalencias:
+            if not equivalencias[campo].issubset(campos_presentes):
+                faltantes.add(campo)
+        elif campo not in campos_presentes:
+            faltantes.add(campo)
+
+    return faltantes
+
+
+def datos_faltantes_por_campo(observaciones):
+    """Devuelve un diccionario {campo: [ciudades]} con el listado de
+    estaciones donde ese campo vino faltante (None)."""
+    campos_a_revisar = [
+        "temperatura", "sensacion_termica", "humedad",
+        "direccion_viento", "velocidad_viento", "presion"
+    ]
+    faltantes = {campo: [] for campo in campos_a_revisar}
+
+    for ciudad, datos in observaciones.items():
+        for campo in campos_a_revisar:
+            if datos.get(campo) is None:
+                faltantes[campo].append(ciudad)
+
+    return faltantes
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python analisis_smn.py <ruta_archivo>")
@@ -183,3 +223,8 @@ if __name__ == "__main__":
     print(f"Ciudad(es) con viento mínimo: {ciudad_viento_minimo(datos)}")
     print(f"Top 5 más cálidas: {top_n_ciudades(datos, 'temperatura', 5)}")
     print(f"Top 5 más frías: {top_n_ciudades(datos, 'temperatura', 5, descendente=False)}")
+    print(f"Columnas ausentes: {columnas_ausentes(datos)}")
+
+    faltantes = datos_faltantes_por_campo(datos)
+    for campo, ciudades in faltantes.items():
+        print(f"Faltan datos de '{campo}' en {len(ciudades)} ciudad(es)")
