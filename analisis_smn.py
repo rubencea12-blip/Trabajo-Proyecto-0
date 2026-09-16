@@ -208,6 +208,51 @@ def datos_faltantes_por_campo(observaciones):
     return faltantes
 
 
+def mostrar_resumen(observaciones):
+    """Imprime por pantalla un resumen con todas las características
+    calculadas sobre las observaciones."""
+    print("=" * 50)
+    print("RESUMEN DE OBSERVACIONES METEOROLÓGICAS - SMN")
+    print("=" * 50)
+
+    print(f"\nCantidad total de ciudades leídas: {cantidad_ciudades(observaciones)}")
+    print(f"Ciudades con todos los datos completos: {cantidad_ciudades_completas(observaciones)}")
+
+    ausentes = columnas_ausentes(observaciones)
+    if ausentes:
+        print(f"\nColumnas esperadas ausentes en el archivo: {ausentes}")
+    else:
+        print("\nNo hay columnas esperadas ausentes.")
+
+    print("\nDatos faltantes por campo:")
+    faltantes = datos_faltantes_por_campo(observaciones)
+    for campo, ciudades in faltantes.items():
+        print(f"  - {campo}: {len(ciudades)} ciudad(es)")
+
+    print(f"\nTemperatura máxima: {ciudad_temperatura_maxima(observaciones)}")
+    print(f"Temperatura mínima: {ciudad_temperatura_minima(observaciones)}")
+    print(f"Viento máximo: {ciudad_viento_maximo(observaciones)}")
+    print(f"Viento mínimo: {ciudad_viento_minimo(observaciones)}")
+
+    print("\nTop 5 ciudades más cálidas:")
+    for ciudad, temp in top_n_ciudades(observaciones, "temperatura", 5):
+        print(f"  {ciudad}: {temp}°C")
+
+    print("\nTop 5 ciudades más frías:")
+    for ciudad, temp in top_n_ciudades(observaciones, "temperatura", 5, descendente=False):
+        print(f"  {ciudad}: {temp}°C")
+
+    print("\nTop 5 ciudades con más viento:")
+    for ciudad, vel in top_n_ciudades(observaciones, "velocidad_viento", 5):
+        print(f"  {ciudad}: {vel} km/h")
+
+    print("\nTop 5 ciudades con menos viento:")
+    for ciudad, vel in top_n_ciudades(observaciones, "velocidad_viento", 5, descendente=False):
+        print(f"  {ciudad}: {vel} km/h")
+
+    print("\n" + "=" * 50)
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python analisis_smn.py <ruta_archivo>")
@@ -215,16 +260,4 @@ if __name__ == "__main__":
 
     ruta = sys.argv[1]
     datos = leer_observaciones(ruta)
-    print(f"Se leyeron {cantidad_ciudades(datos)} ciudades.")
-    print(f"Ciudades con todos los datos completos: {cantidad_ciudades_completas(datos)}")
-    print(f"Ciudad(es) con temperatura máxima: {ciudad_temperatura_maxima(datos)}")
-    print(f"Ciudad(es) con temperatura mínima: {ciudad_temperatura_minima(datos)}")
-    print(f"Ciudad(es) con viento máximo: {ciudad_viento_maximo(datos)}")
-    print(f"Ciudad(es) con viento mínimo: {ciudad_viento_minimo(datos)}")
-    print(f"Top 5 más cálidas: {top_n_ciudades(datos, 'temperatura', 5)}")
-    print(f"Top 5 más frías: {top_n_ciudades(datos, 'temperatura', 5, descendente=False)}")
-    print(f"Columnas ausentes: {columnas_ausentes(datos)}")
-
-    faltantes = datos_faltantes_por_campo(datos)
-    for campo, ciudades in faltantes.items():
-        print(f"Faltan datos de '{campo}' en {len(ciudades)} ciudad(es)")
+    mostrar_resumen(datos)
