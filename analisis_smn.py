@@ -1,10 +1,17 @@
 import sys
+import datetime
 
 CAMPOS_ESPERADOS = [
-    "ciudad", "fecha", "hora", "condicion", "visibilidad",
+    "ciudad", "fecha_y_hora", "condicion", "visibilidad",
     "temperatura", "sensacion_termica", "humedad",
     "viento", "presion"
 ]
+
+MESES = {
+    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4,
+    "mayo": 5, "junio": 6, "julio": 7, "agosto": 8,
+    "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
+}
 
 
 def separar_viento(campo_viento):
@@ -23,6 +30,22 @@ def separar_viento(campo_viento):
         velocidad = None
 
     return (direccion, velocidad)
+
+
+def parsear_fecha_hora(fecha_texto, hora_texto):
+    """Convierte una fecha 'dd-mes-aaaa' (en español) y una hora 'HH:MM'
+    en un único objeto datetime.datetime."""
+    partes_fecha = fecha_texto.split("-")
+    dia = int(partes_fecha[0])
+    mes_texto = partes_fecha[1].lower()
+    anio = int(partes_fecha[2])
+    mes = MESES[mes_texto]
+
+    partes_hora = hora_texto.split(":")
+    hora = int(partes_hora[0])
+    minuto = int(partes_hora[1])
+
+    return datetime.datetime(anio, mes, dia, hora, minuto)
 
 
 def leer_observaciones(ruta):
@@ -48,8 +71,8 @@ def leer_observaciones(ruta):
                     continue
 
                 ciudad = campos[0]
-                fecha = campos[1]
-                hora = campos[2]
+                fecha_texto = campos[1]
+                hora_texto = campos[2]
                 condicion = campos[3]
                 visibilidad = campos[4]
                 temp_texto = campos[5]
@@ -57,6 +80,8 @@ def leer_observaciones(ruta):
                 humedad_texto = campos[7]
                 viento_texto = campos[8]
                 presion_texto = campos[9]
+
+                fecha_y_hora = parsear_fecha_hora(fecha_texto, hora_texto)
 
                 try:
                     temperatura = float(temp_texto)
@@ -84,8 +109,7 @@ def leer_observaciones(ruta):
                     presion = None
 
                 observaciones[ciudad] = {
-                    "fecha": fecha,
-                    "hora": hora,
+                    "fecha_y_hora": fecha_y_hora,
                     "condicion": condicion,
                     "visibilidad": visibilidad,
                     "temperatura": temperatura,
@@ -160,33 +184,37 @@ def ciudad_viento_minimo(observaciones):
     return [c for c, d in validas.items() if d["velocidad_viento"] == minima]
 
 
+def obtener_valor_del_par(par):
+    """Función auxiliar para ordenar: devuelve el segundo elemento del par."""
+    return par[1]
+
+
 def top_n_ciudades(observaciones, campo, n, descendente=True):
     """Devuelve las n ciudades ordenadas según 'campo', de mayor a menor
     (o al revés si descendente=False). Reutilizable para temperatura o viento."""
     validas = [(c, d[campo]) for c, d in observaciones.items() if d[campo] is not None]
-    validas.sort(key=lambda par: par[1], reverse=descendente)
+    validas.sort(key=obtener_valor_del_par, reverse=descendente)
     return validas[:n]
 
 
 def columnas_ausentes(observaciones):
-    """Devuelve el conjunto de campos esperados que no aparecen en ninguna
+    """Devuelve la lista de campos esperados que no aparecen en ninguna
     observación leída."""
-    campos_presentes = set()
+    campos_presentes = []
     for datos in observaciones.values():
-        campos_presentes.update(datos.keys())
+        for campo in datos.keys():
+            if campo not in campos_presentes:
+                campos_presentes.append(campo)
 
-    esperados = set(CAMPOS_ESPERADOS[1:])
-    equivalencias = {
-        "viento": {"direccion_viento", "velocidad_viento"}
-    }
+    campos_viento = ["direccion_viento", "velocidad_viento"]
 
-    faltantes = set()
-    for campo in esperados:
-        if campo in equivalencias:
-            if not equivalencias[campo].issubset(campos_presentes):
-                faltantes.add(campo)
+    faltantes = []
+    for campo in CAMPOS_ESPERADOS[1:]:
+        if campo == "viento":
+            if "direccion_viento" not in campos_presentes or "velocidad_viento" not in campos_presentes:
+                faltantes.append(campo)
         elif campo not in campos_presentes:
-            faltantes.add(campo)
+            faltantes.append(campo)
 
     return faltantes
 
@@ -206,6 +234,19 @@ def datos_faltantes_por_campo(observaciones):
                 faltantes[campo].append(ciudad)
 
     return faltantes
+
+
+def horarios_reportados(observaciones):
+    """Devuelve una lista de los horarios a los que las estaciones
+    reportaron la observación, en formato 'HH:MM', sin repetir y
+    ordenados de menor a mayor."""
+    horarios = []
+    for datos in observaciones.values():
+        hora_texto = datos["fecha_y_hora"].strftime("%H:%M")
+        if hora_texto not in horarios:
+            horarios.append(hora_texto)
+    horarios.sort()
+    return horarios
 
 
 def mostrar_resumen(observaciones):
@@ -228,6 +269,8 @@ def mostrar_resumen(observaciones):
     faltantes = datos_faltantes_por_campo(observaciones)
     for campo, ciudades in faltantes.items():
         print(f"  - {campo}: {len(ciudades)} ciudad(es)")
+
+    print(f"\nHorarios reportados: {horarios_reportados(observaciones)}")
 
     print(f"\nTemperatura máxima: {ciudad_temperatura_maxima(observaciones)}")
     print(f"Temperatura mínima: {ciudad_temperatura_minima(observaciones)}")
