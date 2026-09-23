@@ -28,15 +28,15 @@ python analisis\_smn.py datos/observaciones\_smn.txt
 
 
 
-\## Ejemplo de lo que muestra al ejecutarlo
+\## Ejemplo sencillo de lo que muestra al ejecutarlo
 
 
 
 Se leyeron 121 ciudades.
 
-Ciudades con todos los datos completos: 25
+-Ciudades con todos los datos completos: 25
 
-Temperatura máxima: Rivadavia (28°C)
+-Temperatura máxima: Rivadavia (28°C)
 
-Temperatura mínima: Base Belgrano II (-28.6°C)
+-Temperatura mínima: Base Belgrano II (-28.6°C)
 
