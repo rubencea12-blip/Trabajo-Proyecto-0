@@ -148,42 +148,6 @@ def cantidad_ciudades_completas(observaciones):
     return completas
 
 
-def ciudad_temperatura_maxima(observaciones):
-    """Devuelve la ciudad (o ciudades) con la temperatura más alta."""
-    validas = {c: d for c, d in observaciones.items() if d["temperatura"] is not None}
-    if not validas:
-        return []
-    maxima = max(d["temperatura"] for d in validas.values())
-    return [c for c, d in validas.items() if d["temperatura"] == maxima]
-
-
-def ciudad_temperatura_minima(observaciones):
-    """Devuelve la ciudad (o ciudades) con la temperatura más baja."""
-    validas = {c: d for c, d in observaciones.items() if d["temperatura"] is not None}
-    if not validas:
-        return []
-    minima = min(d["temperatura"] for d in validas.values())
-    return [c for c, d in validas.items() if d["temperatura"] == minima]
-
-
-def ciudad_viento_maximo(observaciones):
-    """Devuelve la ciudad (o ciudades) con la velocidad de viento más alta."""
-    validas = {c: d for c, d in observaciones.items() if d["velocidad_viento"] is not None}
-    if not validas:
-        return []
-    maxima = max(d["velocidad_viento"] for d in validas.values())
-    return [c for c, d in validas.items() if d["velocidad_viento"] == maxima]
-
-
-def ciudad_viento_minimo(observaciones):
-    """Devuelve la ciudad (o ciudades) con la velocidad de viento más baja."""
-    validas = {c: d for c, d in observaciones.items() if d["velocidad_viento"] is not None}
-    if not validas:
-        return []
-    minima = min(d["velocidad_viento"] for d in validas.values())
-    return [c for c, d in validas.items() if d["velocidad_viento"] == minima]
-
-
 def obtener_valor_del_par(par):
     """Función auxiliar para ordenar: devuelve el segundo elemento del par."""
     return par[1]
@@ -205,8 +169,6 @@ def columnas_ausentes(observaciones):
         for campo in datos.keys():
             if campo not in campos_presentes:
                 campos_presentes.append(campo)
-
-    campos_viento = ["direccion_viento", "velocidad_viento"]
 
     faltantes = []
     for campo in CAMPOS_ESPERADOS[1:]:
@@ -272,10 +234,15 @@ def mostrar_resumen(observaciones):
 
     print(f"\nHorarios reportados: {horarios_reportados(observaciones)}")
 
-    print(f"\nTemperatura máxima: {ciudad_temperatura_maxima(observaciones)}")
-    print(f"Temperatura mínima: {ciudad_temperatura_minima(observaciones)}")
-    print(f"Viento máximo: {ciudad_viento_maximo(observaciones)}")
-    print(f"Viento mínimo: {ciudad_viento_minimo(observaciones)}")
+    temp_max = top_n_ciudades(observaciones, "temperatura", 1)
+    temp_min = top_n_ciudades(observaciones, "temperatura", 1, descendente=False)
+    viento_max = top_n_ciudades(observaciones, "velocidad_viento", 1)
+    viento_min = top_n_ciudades(observaciones, "velocidad_viento", 1, descendente=False)
+
+    print(f"\nTemperatura máxima: {temp_max}")
+    print(f"Temperatura mínima: {temp_min}")
+    print(f"Viento máximo: {viento_max}")
+    print(f"Viento mínimo: {viento_min}")
 
     print("\nTop 5 ciudades más cálidas:")
     for ciudad, temp in top_n_ciudades(observaciones, "temperatura", 5):
