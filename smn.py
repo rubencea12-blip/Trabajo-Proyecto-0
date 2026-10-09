@@ -173,6 +173,16 @@ def top_n_ciudades(observaciones, campo, n, descendente=True):
     return validas[:n]
 
 
+def extremos(observaciones, campo, descendente=True):
+    """Devuelve todas las ciudades que comparten el valor máximo (o mínimo
+    si descendente=False) del campo, usando top_n_ciudades."""
+    ordenadas = top_n_ciudades(observaciones, campo, len(observaciones), descendente)
+    if not ordenadas:
+        return []
+    mejor_valor = ordenadas[0][1]
+    return [par for par in ordenadas if par[1] == mejor_valor]
+
+
 def columnas_ausentes(observaciones):
     """Devuelve la lista de campos esperados que no aparecen en ninguna
     observación leída."""
@@ -246,15 +256,10 @@ def mostrar_resumen(observaciones):
 
     print(f"\nHorarios reportados: {horarios_reportados(observaciones)}")
 
-    temp_max = top_n_ciudades(observaciones, "temperatura", 1)
-    temp_min = top_n_ciudades(observaciones, "temperatura", 1, descendente=False)
-    viento_max = top_n_ciudades(observaciones, "velocidad_viento", 1)
-    viento_min = top_n_ciudades(observaciones, "velocidad_viento", 1, descendente=False)
-
-    print(f"\nTemperatura máxima: {temp_max}")
-    print(f"Temperatura mínima: {temp_min}")
-    print(f"Viento máximo: {viento_max}")
-    print(f"Viento mínimo: {viento_min}")
+    print(f"\nTemperatura máxima: {extremos(observaciones, 'temperatura')}")
+    print(f"Temperatura mínima: {extremos(observaciones, 'temperatura', descendente=False)}")
+    print(f"Viento máximo: {extremos(observaciones, 'velocidad_viento')}")
+    print(f"Viento mínimo: {extremos(observaciones, 'velocidad_viento', descendente=False)}")
 
     print("\nTop 5 ciudades más cálidas:")
     for ciudad, temp in top_n_ciudades(observaciones, "temperatura", 5):
