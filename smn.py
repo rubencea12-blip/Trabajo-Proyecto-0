@@ -48,15 +48,27 @@ def parsear_fecha_hora(fecha_texto, hora_texto):
     return datetime.datetime(anio, mes, dia, hora, minuto)
 
 
-def leer_observaciones(ruta):
+def detectar_codificacion(ruta):
+    """Devuelve 'utf-8' si el archivo se puede decodificar como utf-8,
+    y 'latin-1' en caso contrario."""
+    with open(ruta, "rb") as archivo:
+        contenido = archivo.read()
+    try:
+        contenido.decode("utf-8")
+        return "utf-8"
+    except UnicodeDecodeError:
+        return "latin-1"
+
+
+def leer_observaciones(ruta, codificacion):
     """Lee el archivo de observaciones del SMN y devuelve un diccionario
     {ciudad: datos}."""
     observaciones = {}
     lineas_invalidas = 0
 
     try:
-        with open(ruta, "r", encoding="latin-1") as archivo:
-            for numero_linea, linea in enumerate(archivo, start=1):
+        with open(ruta, "r", encoding=codificacion) as archivo:
+            for linea in archivo:
                 linea = linea.strip()
                 if not linea:
                     continue
@@ -265,9 +277,10 @@ def mostrar_resumen(observaciones):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Uso: python analisis_smn.py <ruta_archivo>")
+        print("Uso: python smn.py <ruta_archivo>")
         sys.exit(1)
 
     ruta = sys.argv[1]
-    datos = leer_observaciones(ruta)
+    codificacion = detectar_codificacion(ruta)
+    datos = leer_observaciones(ruta, codificacion)
     mostrar_resumen(datos)
