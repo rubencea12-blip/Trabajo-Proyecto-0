@@ -1,4 +1,6 @@
 import sys
+import os
+import json
 import datetime
 
 CAMPOS_ESPERADOS = [
@@ -280,12 +282,45 @@ def mostrar_resumen(observaciones):
     print("\n" + "=" * 50)
 
 
+def observaciones_a_json(observaciones):
+    """Copia el diccionario pasando la fecha de datetime a texto ISO 8601
+    sin segundos (ej: '2026-10-01T00:00'), porque JSON no guarda fechas."""
+    resultado = {}
+    for ciudad, datos in observaciones.items():
+        copia = dict(datos)
+        copia["fecha_y_hora"] = datos["fecha_y_hora"].isoformat(timespec="minutes")
+        resultado[ciudad] = copia
+    return resultado
+
+
+def procesar_txt(ruta):
+    """Convierte un .txt del SMN a .json dentro de la carpeta obs_json."""
+    print("archivo del SMN, convirtiendo a json...")
+
+    codificacion = detectar_codificacion(ruta)
+    print(f"codificación detectada: {codificacion}")
+
+    observaciones = leer_observaciones(ruta, codificacion)
+    print("lectura completada")
+
+    if not os.path.exists("obs_json"):
+        print("el directorio obs_json no existe, creándolo...")
+        os.makedirs("obs_json")
+        print("directorio creado")
+
+    nombre = os.path.splitext(os.path.basename(ruta))[0] + ".json"
+    ruta_json = os.path.join("obs_json", nombre)
+
+    print(f"guardando {ruta_json}...")
+    with open(ruta_json, "w", encoding="utf-8") as archivo:
+        json.dump(observaciones_a_json(observaciones), archivo,
+                  ensure_ascii=False, indent=2)
+    print("archivo json guardado")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python smn.py <ruta_archivo>")
         sys.exit(1)
 
-    ruta = sys.argv[1]
-    codificacion = detectar_codificacion(ruta)
-    datos = leer_observaciones(ruta, codificacion)
-    mostrar_resumen(datos)
+    procesar_txt(sys.argv[1])
