@@ -17,7 +17,7 @@ MESES = {
 
 
 def separar_viento(campo_viento):
-    """Convierte 'Norte  3' en ('Norte', 3.0). Contempla 'Calma'."""
+    """Separa 'Norte  3' en direccion y velocidad."""
     campo_viento = campo_viento.strip()
     if campo_viento.lower() == "calma":
         return ("Calma", 0.0)
@@ -35,13 +35,11 @@ def separar_viento(campo_viento):
 
 
 def parsear_fecha_hora(fecha_texto, hora_texto):
-    """Convierte una fecha 'dd-mes-aaaa' (en español) y una hora 'HH:MM'
-    en un único objeto datetime.datetime."""
+    """Junta fecha y hora en un solo datetime."""
     partes_fecha = fecha_texto.split("-")
     dia = int(partes_fecha[0])
-    mes_texto = partes_fecha[1].lower()
+    mes = MESES[partes_fecha[1].lower()]
     anio = int(partes_fecha[2])
-    mes = MESES[mes_texto]
 
     partes_hora = hora_texto.split(":")
     hora = int(partes_hora[0])
@@ -51,8 +49,7 @@ def parsear_fecha_hora(fecha_texto, hora_texto):
 
 
 def detectar_codificacion(ruta):
-    """Devuelve 'utf-8' si el archivo se puede decodificar como utf-8,
-    y 'latin-1' en caso contrario."""
+    """Devuelve utf-8 si el archivo se puede leer asi, sino latin-1."""
     with open(ruta, "rb") as archivo:
         contenido = archivo.read()
     try:
@@ -63,8 +60,7 @@ def detectar_codificacion(ruta):
 
 
 def leer_observaciones(ruta, codificacion):
-    """Lee el archivo de observaciones del SMN y devuelve un diccionario
-    {ciudad: datos}."""
+    """Lee el txt del SMN y devuelve un diccionario {ciudad: datos}."""
     observaciones = {}
     lineas_invalidas = 0
 
@@ -72,60 +68,52 @@ def leer_observaciones(ruta, codificacion):
         with open(ruta, "r", encoding=codificacion) as archivo:
             for linea in archivo:
                 linea = linea.strip()
-                if not linea:
+                if linea == "":
                     continue
 
                 if linea.endswith("/"):
                     linea = linea[:-1].strip()
 
-                campos = [c.strip() for c in linea.split(";")]
+                campos = []
+                for c in linea.split(";"):
+                    campos.append(c.strip())
 
                 if len(campos) != 10:
                     lineas_invalidas += 1
                     continue
 
                 ciudad = campos[0]
-                fecha_texto = campos[1]
-                hora_texto = campos[2]
-                condicion = campos[3]
-                visibilidad = campos[4]
-                temp_texto = campos[5]
-                sensacion_texto = campos[6]
-                humedad_texto = campos[7]
-                viento_texto = campos[8]
-                presion_texto = campos[9]
-
-                fecha_y_hora = parsear_fecha_hora(fecha_texto, hora_texto)
+                fecha_y_hora = parsear_fecha_hora(campos[1], campos[2])
 
                 try:
-                    temperatura = float(temp_texto)
+                    temperatura = float(campos[5])
                 except ValueError:
                     temperatura = None
 
-                if sensacion_texto.lower() == "no se calcula":
+                if campos[6].lower() == "no se calcula":
                     sensacion_termica = None
                 else:
                     try:
-                        sensacion_termica = float(sensacion_texto)
+                        sensacion_termica = float(campos[6])
                     except ValueError:
                         sensacion_termica = None
 
                 try:
-                    humedad = float(humedad_texto)
+                    humedad = float(campos[7])
                 except ValueError:
                     humedad = None
 
-                direccion_viento, velocidad_viento = separar_viento(viento_texto)
+                direccion_viento, velocidad_viento = separar_viento(campos[8])
 
                 try:
-                    presion = float(presion_texto)
+                    presion = float(campos[9])
                 except ValueError:
                     presion = None
 
                 observaciones[ciudad] = {
                     "fecha_y_hora": fecha_y_hora,
-                    "condicion": condicion,
-                    "visibilidad": visibilidad,
+                    "condicion": campos[3],
+                    "visibilidad": campos[4],
                     "temperatura": temperatura,
                     "sensacion_termica": sensacion_termica,
                     "humedad": humedad,
@@ -139,55 +127,64 @@ def leer_observaciones(ruta, codificacion):
         sys.exit(1)
 
     if lineas_invalidas > 0:
-        print(f"Aviso: se encontraron {lineas_invalidas} línea(s) mal formadas, ignoradas.")
+        print(f"Aviso: {lineas_invalidas} línea(s) mal formadas, ignoradas.")
 
     return observaciones
 
 
 def cantidad_ciudades(observaciones):
-    """Devuelve la cantidad total de ciudades leídas."""
+    """Cantidad total de ciudades leidas."""
     return len(observaciones)
 
 
 def cantidad_ciudades_completas(observaciones):
-    """Devuelve la cantidad de ciudades sin ningún dato faltante."""
+    """Cantidad de ciudades sin ningun dato faltante."""
     completas = 0
     for datos in observaciones.values():
-        if datos["temperatura"] is not None and \
-           datos["sensacion_termica"] is not None and \
-           datos["humedad"] is not None and \
-           datos["velocidad_viento"] is not None and \
-           datos["presion"] is not None:
-            completas += 1
+        if datos["temperatura"] is None:
+            continue
+        if datos["sensacion_termica"] is None:
+            continue
+        if datos["humedad"] is None:
+            continue
+        if datos["velocidad_viento"] is None:
+            continue
+        if datos["presion"] is None:
+            continue
+        completas += 1
     return completas
 
 
 def obtener_valor_del_par(par):
-    """Función auxiliar para ordenar: devuelve el segundo elemento del par."""
+    """Devuelve el segundo elemento del par, para ordenar."""
     return par[1]
 
 
 def top_n_ciudades(observaciones, campo, n, descendente=True):
-    """Devuelve las n ciudades ordenadas según 'campo', de mayor a menor
-    (o al revés si descendente=False). Reutilizable para temperatura o viento."""
-    validas = [(c, d[campo]) for c, d in observaciones.items() if d[campo] is not None]
+    """Devuelve las n ciudades ordenadas segun el campo."""
+    validas = []
+    for ciudad, datos in observaciones.items():
+        if datos[campo] is not None:
+            validas.append((ciudad, datos[campo]))
     validas.sort(key=obtener_valor_del_par, reverse=descendente)
     return validas[:n]
 
 
 def extremos(observaciones, campo, descendente=True):
-    """Devuelve todas las ciudades que comparten el valor máximo (o mínimo
-    si descendente=False) del campo, usando top_n_ciudades."""
+    """Devuelve todas las ciudades empatadas en el maximo (o minimo)."""
     ordenadas = top_n_ciudades(observaciones, campo, len(observaciones), descendente)
-    if not ordenadas:
+    if len(ordenadas) == 0:
         return []
     mejor_valor = ordenadas[0][1]
-    return [par for par in ordenadas if par[1] == mejor_valor]
+    resultado = []
+    for par in ordenadas:
+        if par[1] == mejor_valor:
+            resultado.append(par)
+    return resultado
 
 
 def columnas_ausentes(observaciones):
-    """Devuelve la lista de campos esperados que no aparecen en ninguna
-    observación leída."""
+    """Devuelve los campos esperados que no aparecen en ninguna observacion."""
     campos_presentes = []
     for datos in observaciones.values():
         for campo in datos.keys():
@@ -206,13 +203,14 @@ def columnas_ausentes(observaciones):
 
 
 def datos_faltantes_por_campo(observaciones):
-    """Devuelve un diccionario {campo: [ciudades]} con el listado de
-    estaciones donde ese campo vino faltante (None)."""
+    """Devuelve {campo: [ciudades]} con las estaciones donde falta el dato."""
     campos_a_revisar = [
         "temperatura", "sensacion_termica", "humedad",
         "direccion_viento", "velocidad_viento", "presion"
     ]
-    faltantes = {campo: [] for campo in campos_a_revisar}
+    faltantes = {}
+    for campo in campos_a_revisar:
+        faltantes[campo] = []
 
     for ciudad, datos in observaciones.items():
         for campo in campos_a_revisar:
@@ -223,9 +221,7 @@ def datos_faltantes_por_campo(observaciones):
 
 
 def horarios_reportados(observaciones):
-    """Devuelve una lista de los horarios a los que las estaciones
-    reportaron la observación, en formato 'HH:MM', sin repetir y
-    ordenados de menor a mayor."""
+    """Lista de horarios HH:MM sin repetir y ordenados."""
     horarios = []
     for datos in observaciones.values():
         hora_texto = datos["fecha_y_hora"].strftime("%H:%M")
@@ -236,8 +232,7 @@ def horarios_reportados(observaciones):
 
 
 def mostrar_resumen(observaciones):
-    """Imprime por pantalla un resumen con todas las características
-    calculadas sobre las observaciones."""
+    """Imprime el resumen con todas las caracteristicas."""
     print("=" * 50)
     print("RESUMEN DE OBSERVACIONES METEOROLÓGICAS - SMN")
     print("=" * 50)
@@ -283,8 +278,7 @@ def mostrar_resumen(observaciones):
 
 
 def observaciones_a_json(observaciones):
-    """Copia el diccionario pasando la fecha de datetime a texto ISO 8601
-    sin segundos (ej: '2026-10-01T00:00'), porque JSON no guarda fechas."""
+    """Pasa la fecha de datetime a texto, porque json no guarda fechas."""
     resultado = {}
     for ciudad, datos in observaciones.items():
         copia = dict(datos)
@@ -293,8 +287,14 @@ def observaciones_a_json(observaciones):
     return resultado
 
 
+def mostrar_cantidades(observaciones):
+    """Imprime la cantidad de ciudades y las informadas."""
+    print("Ciudades en el archivo:", cantidad_ciudades(observaciones))
+    print("Ciudades informadas:", cantidad_ciudades_completas(observaciones))
+
+
 def procesar_txt(ruta):
-    """Convierte un .txt del SMN a .json dentro de la carpeta obs_json."""
+    """Convierte un txt del SMN a json dentro de obs_json."""
     print("archivo del SMN, convirtiendo a json...")
 
     codificacion = detectar_codificacion(ruta)
@@ -316,6 +316,8 @@ def procesar_txt(ruta):
         json.dump(observaciones_a_json(observaciones), archivo,
                   ensure_ascii=False, indent=2)
     print("archivo json guardado")
+
+    mostrar_cantidades(observaciones)
 
 
 if __name__ == "__main__":
