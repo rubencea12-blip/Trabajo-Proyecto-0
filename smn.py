@@ -320,9 +320,30 @@ def procesar_txt(ruta):
     mostrar_cantidades(observaciones)
 
 
+def procesar_json(ruta):
+    """Lee un json e imprime las cantidades de ciudades."""
+    print("archivo json, leyendo...")
+    try:
+        with open(ruta, "r", encoding="utf-8") as archivo:
+            observaciones = json.load(archivo)
+        print("lectura completada")
+    except FileNotFoundError:
+        print("no se encontró el archivo, no se completó")
+        return
+    except ValueError:
+        print("el json está mal formado, no se completó")
+        return
+
+    mostrar_cantidades(observaciones)
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python smn.py <ruta_archivo>")
         sys.exit(1)
 
-    procesar_txt(sys.argv[1])
+    ruta = sys.argv[1]
+    if ruta.endswith(".json"):
+        procesar_json(ruta)
+    else:
+        procesar_txt(ruta)
