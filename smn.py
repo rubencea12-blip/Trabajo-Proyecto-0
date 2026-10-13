@@ -337,13 +337,37 @@ def procesar_json(ruta):
     mostrar_cantidades(observaciones)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Uso: python smn.py <ruta_archivo>")
-        sys.exit(1)
+def contar_archivos(carpeta, extension):
+    """Cuenta los archivos con esa extension en la carpeta."""
+    if not os.path.isdir(carpeta):
+        return 0
+    cantidad = 0
+    for nombre in os.listdir(carpeta):
+        if nombre.endswith(extension):
+            cantidad += 1
+    return cantidad
 
-    ruta = sys.argv[1]
-    if ruta.endswith(".json"):
+
+def main(argumentos):
+    """Decide que hacer segun los parametros que se pasaron."""
+    if len(argumentos) > 2:
+        print("Se pasó más de un parámetro. Uso: python smn.py <ruta_archivo>")
+        return
+
+    if len(argumentos) == 1:
+        print("No se indicó ningún archivo. Uso: python smn.py <ruta_archivo>")
+        print("Archivos .txt en datos/:", contar_archivos("datos", ".txt"))
+        print("Archivos .json en obs_json/:", contar_archivos("obs_json", ".json"))
+        return
+
+    ruta = argumentos[1]
+    if ruta.endswith(".txt"):
+        procesar_txt(ruta)
+    elif ruta.endswith(".json"):
         procesar_json(ruta)
     else:
-        procesar_txt(ruta)
+        print("Extensión no soportada, se esperaba un archivo .txt o .json")
+
+
+if __name__ == "__main__":
+    main(sys.argv)
