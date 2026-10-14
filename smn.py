@@ -297,7 +297,11 @@ def procesar_txt(ruta):
     """Convierte un txt del SMN a json dentro de obs_json."""
     print("archivo del SMN, convirtiendo a json...")
 
-    codificacion = detectar_codificacion(ruta)
+    try:
+        codificacion = detectar_codificacion(ruta)
+    except FileNotFoundError:
+        print("no se encontró el archivo, no se completó")
+        return
     print(f"codificación detectada: {codificacion}")
 
     observaciones = leer_observaciones(ruta, codificacion)
@@ -305,17 +309,25 @@ def procesar_txt(ruta):
 
     if not os.path.exists("obs_json"):
         print("el directorio obs_json no existe, creándolo...")
-        os.makedirs("obs_json")
-        print("directorio creado")
+        try:
+            os.makedirs("obs_json")
+            print("directorio creado")
+        except OSError:
+            print("no se pudo crear el directorio, no se completó")
+            return
 
     nombre = os.path.splitext(os.path.basename(ruta))[0] + ".json"
     ruta_json = os.path.join("obs_json", nombre)
 
     print(f"guardando {ruta_json}...")
-    with open(ruta_json, "w", encoding="utf-8") as archivo:
-        json.dump(observaciones_a_json(observaciones), archivo,
-                  ensure_ascii=False, indent=2)
-    print("archivo json guardado")
+    try:
+        with open(ruta_json, "w", encoding="utf-8") as archivo:
+            json.dump(observaciones_a_json(observaciones), archivo,
+                      ensure_ascii=False, indent=2)
+        print("archivo json guardado")
+    except OSError:
+        print("no se pudo guardar el archivo json, no se completó")
+        return
 
     mostrar_cantidades(observaciones)
 
